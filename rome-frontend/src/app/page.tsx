@@ -77,6 +77,18 @@ function Navbar() {
         {/* CTA */}
         <div className="flex items-center gap-3">
           <Link
+            href="/pricing"
+            className="text-sm text-[#a1a1aa] hover:text-[#fafafa] transition-colors hidden sm:block"
+          >
+            Pricing
+          </Link>
+          <Link
+            href="/roi-calculator"
+            className="text-sm text-[#a1a1aa] hover:text-[#fafafa] transition-colors hidden sm:block"
+          >
+            ROI Calculator
+          </Link>
+          <Link
             href="/login"
             className="text-sm text-[#a1a1aa] hover:text-[#fafafa] transition-colors hidden sm:block"
           >
@@ -152,11 +164,16 @@ function Hero() {
             Start 7-Day Free Trial
           </Link>
           <Link
-            href="#how-it-works"
+            href="/roi-calculator"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-[#a1a1aa] hover:text-[#fafafa] font-medium text-base px-8 py-4 rounded-xl border border-[#3f3f46] hover:border-[#52525b] transition-all"
           >
-            See how it works
-            <ChevronDown className="w-4 h-4" />
+            ROI Calculator
+          </Link>
+          <Link
+            href="/compare"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-[#a1a1aa] hover:text-[#fafafa] font-medium text-base px-8 py-4 rounded-xl border border-[#3f3f46] hover:border-[#52525b] transition-all"
+          >
+            Rome vs Wati
           </Link>
         </div>
 
@@ -546,20 +563,23 @@ function FinalCTA() {
 function Footer() {
   return (
     <footer className="border-t border-[#27272a] py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-[#10b981] flex items-center justify-center">
-            <span className="text-black font-bold text-xs">R</span>
-          </div>
-          <span className="text-[#fafafa] font-semibold text-sm">Rome by Codematics</span>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 rounded-md bg-[#10b981] flex items-center justify-center">
+          <span className="text-black font-bold text-xs">R</span>
         </div>
-        <div className="flex items-center gap-6 text-xs text-[#52525b]">
-          <a href="#" className="hover:text-[#71717a] transition-colors">Privacy</a>
-          <a href="#" className="hover:text-[#71717a] transition-colors">Terms</a>
-          <a href="#" className="hover:text-[#71717a] transition-colors">Support</a>
-          <span>© 2026 Codematics.ai</span>
-        </div>
+        <span className="text-[#fafafa] font-semibold text-sm">Rome by Codematics</span>
       </div>
+      <div className="flex items-center gap-6 text-xs text-[#52525b]">
+        <Link href="/pricing" className="hover:text-[#71717a] transition-colors">Pricing</Link>
+        <Link href="/compare" className="hover:text-[#71717a] transition-colors">Compare</Link>
+        <Link href="/roi-calculator" className="hover:text-[#71717a] transition-colors">ROI Calculator</Link>
+        <Link href="/changelog" className="hover:text-[#71717a] transition-colors">Changelog</Link>
+        <a href="#" className="hover:text-[#71717a] transition-colors">Privacy</a>
+        <a href="#" className="hover:text-[#71717a] transition-colors">Terms</a>
+        <span>© 2026 Codematics.ai</span>
+      </div>
+    </div>
     </footer>
   );
 }
