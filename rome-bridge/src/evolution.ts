@@ -26,7 +26,8 @@ export class EvolutionClient {
       ? payload.number
       : `${payload.number}@s.whatsapp.net`;
 
-    await this.client.post(`/message/sendText/${this.instance}`, {
+    // Evolution API v2 endpoint shape: /messages/sendText/{instanceName}
+    await this.client.post(`/messages/sendText/${this.instance}`, {
       number,
       text: payload.text,
     });
@@ -37,7 +38,7 @@ export class EvolutionClient {
    * Group JID format: "123456789-987654321@g.us"
    */
   async sendGroupText(groupJid: string, text: string): Promise<void> {
-    await this.client.post(`/message/sendText/${this.instance}`, {
+    await this.client.post(`/messages/sendText/${this.instance}`, {
       number: groupJid,
       text,
     });
@@ -57,8 +58,8 @@ export class EvolutionClient {
    * Returns base64 image string.
    */
   async getQrCode(): Promise<string | null> {
-    const res = await this.client.get(`/instance/connect/${this.instance}`);
-    // QR code is returned in the response; format varies by Evolution API version
+    // For Baileys, QR code is fetched via the connection endpoint
+    const res = await this.client.post(`/instance/connect/${this.instance}`, {});
     return res.data?.qrcode?.code ?? res.data?.qr?.code ?? null;
   }
 
