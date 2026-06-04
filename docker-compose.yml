@@ -1,0 +1,103 @@
+# docker-compose.yml — Rome by Codematics (full stack on VPS)
+# Run: docker compose up -d
+
+services:
+  # ─── PostgreSQL ────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: rome-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rome_db
+      POSTGRES_USER: rome_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-in-prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rome_user -d rome_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis (for Evolution API caching) ─────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: rome-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ─── Evolution API ─────────────────────────────────────────
+  evolution-api:
+    image: evoapicloud/evolution-api:latest
+    container_name: rome-evolution
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Database
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://rome_user:${POSTGRES_PASSWORD:-change-me-in-prod}@postgres:5432/rome_db
+      # Redis
+      CACHE_REDIS: "true"
+      CACHE_REDIS_HOST: redis
+      CACHE_REDIS_PORT: 6379
+      CACHE_REDIS_PASSWORD: ""
+      # Auth
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-rome-evo-key-2026}
+      # Webhook — tell Evolution to send all events to Rome Bridge
+      WEBHOOK_GLOBAL_URL: http://rome-bridge:3001/webhook/ai-agent
+      WEBHOOK_GLOBAL_ENABLED: "true"
+      # Global settings
+      LOG_LEVEL: error
+      SERVER_URL: http://localhost:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - evolution_auth:/evolution/auth
+      - evolution_tokens:/evolution/tokens
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── Rome Bridge (AI Agent) ─────────────────────────────────
+  rome-bridge:
+    build:
+      context: ./rome-bridge
+      dockerfile: Dockerfile
+    container_name: rome-bridge
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://rome_user:${POSTGRES_PASSWORD:-change-me-in-prod}@postgres:5432/rome_db
+      CODEMAX_API_KEY: ${CODEMAX_API_KEY}
+      CODEMAX_API_URL: ${CODEMAX_API_URL:-https://api.codematics.ai/v1}
+      EVOLUTION_API_URL: http://evolution-api:8080
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./rome-bridge/.env.production:/app/.env:ro
+
+volumes:
+  postgres_data:
+  redis_data:
+  evolution_auth:
+  evolution_tokens:

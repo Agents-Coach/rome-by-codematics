@@ -1,0 +1,136 @@
+// Prisma schema for Rome Bridge
+// Shared with Evolution API's PostgreSQL DB or separate
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users & Auth ────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  plan         Plan      @default(STARTER)
+  trialEndsAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  agents Agent[]
+  conversations Conversation[]
+}
+
+enum Plan {
+  STARTER   // 1 instance, 500 msg/mo
+  PRO       // 3 instances, 2000 msg/mo
+  AGENCY    // 10 instances, 10000 msg/mo
+}
+
+// ─── AI Agents ───────────────────────────────────────────────
+
+model Agent {
+  id                     String   @id @default(cuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Identity
+  name                   String   @default("Rome")
+  personality             Personality @default(FRIENDLY)
+
+  // Offer
+  offerName              String
+  offerDescription       String
+  price                  String
+  ctaMessage             String
+  introMessage           String
+  calendarLink           String?
+
+  // AI Configuration
+  talkToHumanKeywords    String[] @default(["talk to human", "speak to someone", "real person", "真人"])
+  faqs                  Json     @default("[]")   // FAQ[]
+  objections             Json     @default("[]")   // Objection[]
+
+  // Evolution API
+  evolutionApiUrl        String
+  evolutionApiKey        String
+  evolutionInstance      String
+
+  status                 AgentStatus @default(ACTIVE)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  conversations Conversation[]
+  messageCounters MessageCounter[]
+}
+
+enum Personality {
+  FRIENDLY
+  PROFESSIONAL
+  CASUAL
+}
+
+enum AgentStatus {
+  ACTIVE
+  PAUSED
+}
+
+// ─── Conversations & Messages ────────────────────────────────
+
+model Conversation {
+  id           String   @id @default(cuid())
+  agentId      String
+  agent        Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  senderNumber String
+  senderName   String   @default("Unknown")
+
+  messages     Message[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([agentId, senderNumber])
+  @@index([updatedAt])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role           MessageRole
+  content        String
+  rawPayload     Json?    // Original Evolution webhook payload
+
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+// ─── Usage Tracking ──────────────────────────────────────────
+
+model MessageCounter {
+  id        String   @id @default(cuid())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  month     Int      // 1-12
+  year      Int
+  count     Int      @default(0)
+
+  @@unique([agentId, month, year])
+  @@index([agentId])
+}
